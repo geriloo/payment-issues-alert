@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payment Issues Alert</title>
+<meta name="theme-color" content="#0e5a4b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pay Alert">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#15202b;--muted:#5d6977;--line:#e1e5ea;--brand:#0e5a4b;--brand-ink:#fff;--soft:#eef4f2;
+--red:#b42318;--red-bg:#fdeceb;--amber:#8a5200;--amber-bg:#fff3dc;--blue:#1e4fd8;--blue-bg:#e8eeff;--green:#13703f;--green-bg:#e5f4eb;--wa:#1c9a52}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1419;--card:#18212b;--ink:#e7ecf1;--muted:#9ba8b6;--line:#2a3542;--brand:#3fb59b;--brand-ink:#05211a;--soft:#162a26;
+--red:#ff8f85;--red-bg:#3a1b1b;--amber:#ffc46b;--amber-bg:#3a2c12;--blue:#a2bbff;--blue-bg:#1a2540;--green:#7cd9a4;--green-bg:#12321f;--wa:#25d366}}
+:root[data-theme="dark"]{--bg:#0f1419;--card:#18212b;--ink:#e7ecf1;--muted:#9ba8b6;--line:#2a3542;--brand:#3fb59b;--brand-ink:#05211a;--soft:#162a26;
+--red:#ff8f85;--red-bg:#3a1b1b;--amber:#ffc46b;--amber-bg:#3a2c12;--blue:#a2bbff;--blue-bg:#1a2540;--green:#7cd9a4;--green-bg:#12321f;--wa:#25d366}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Microsoft YaHei",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+.top{background:var(--brand);color:var(--brand-ink);padding:20px 0}
+.topin{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.top h1{margin:0;font-size:24px;letter-spacing:-.3px}
+.top p{margin:2px 0 0;opacity:.85}
+.today{font-size:13px;display:flex;flex-direction:column;gap:2px}
+.today input{font:inherit;font-size:15px;padding:6px 8px;border-radius:8px;border:0}
+main{padding:20px 16px 60px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 6px;display:inline}
+summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--muted)}
+details[open]>summary::before{content:"▾"}
+.muted{color:var(--muted)}
+.privacy{font-size:13px;color:var(--green);margin:10px 0 0}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.btn{font:inherit;font-size:14px;padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.wa{background:var(--wa);color:#fff;border-color:var(--wa)}
+.btn.danger{color:var(--red)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.pulse{box-shadow:0 0 0 3px var(--amber-bg);border-color:var(--amber);color:var(--amber);font-weight:600}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:14px 0}
+.mapgrid label,.setgrid label{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:3px}
+select,input[type=text],input[type=tel],textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+.req{color:var(--red)}
+.statusbox{margin-top:10px;padding:12px;background:var(--soft);border-radius:10px}
+.statusbox .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:13px}
+.warn{background:var(--amber-bg);color:var(--amber);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.card .n{font-size:28px;font-weight:700;line-height:1.1}
+.card .l{font-size:13px;color:var(--muted)}
+.card.on{outline:2px solid var(--brand);border-color:var(--brand)}
+.card.hot .n{color:var(--red)}
+.list{display:flex;flex-direction:column;gap:12px}
+.rec{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.rec-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.nm{font-weight:650;font-size:16px}
+.meta{font-size:13px;color:var(--muted)}
+.badge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.b-r1{background:var(--amber-bg);color:var(--amber)}
+.b-r2,.b-call,.b-check{background:var(--red-bg);color:var(--red)}
+.b-watch,.b-up{background:var(--blue-bg);color:var(--blue)}
+.b-done{background:var(--green-bg);color:var(--green)}
+.facts{font-size:14px;margin:6px 0}
+.note{font-size:13px;color:var(--amber);margin:4px 0}
+.issues{margin:6px 0 0;padding-left:18px;color:var(--red);font-size:14px}
+.rec textarea{min-height:150px;margin-top:8px;font-size:14px;line-height:1.45}
+.ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:6px}
+.ctl select{width:auto}
+.empty{color:var(--muted);text-align:center;padding:30px;background:var(--card);border:1px dashed var(--line);border-radius:12px}
+.setgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:14px 0}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.tgrid textarea{min-height:170px}
+.tgrid label{font-size:13px;color:var(--muted)}
+.guide ol{padding-left:20px}.guide li{margin:4px 0}
+.foot{margin-top:18px}
+code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:13px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap topin">
+  <div><h1>Payment Issues Alert</h1><p>Catch every unsuccessful premium payment. Remind on Day 3 and Day 7, in English, Malay or Chinese.</p></div>
+  <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+    <button class="btn" id="install" hidden>⬇ Install app</button>
+    <label class="today">Today's date (change it to test)<input type="date" id="today"></label>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <section class="panel">
+    <h2>1. Load your ePartner policy list</h2>
+    <p class="muted" style="margin:4px 0 0">ePartner → Applications → Online Enquiry → View All Policies → export to Excel or CSV.</p>
+    <div class="btns">
+      <label class="btn primary">Choose file<input type="file" id="file" accept=".csv,.xlsx,.xls,.txt" hidden></label>
+      <button class="btn" id="demo">Try with demo data</button>
+      <span id="fileInfo" class="muted"></span>
+    </div>
+    <p class="privacy">🔒 Your file is read on this computer only. Nothing is uploaded and no message is sent without you pressing Send.</p>
+  </section>
+
+  <section class="panel" id="mapPanel" hidden>
+    <details id="mapDetails"><summary><h2>2. Check the columns</h2><span id="mapSummary" class="muted"></span></summary>
+      <div id="mapGrid" class="mapgrid"></div>
+      <label class="muted" style="font-size:13px">Dates in the file are written as
+        <select id="dateFmt" style="width:auto"><option value="dmy">DD/MM/YYYY (Malaysia)</option><option value="mdy">MM/DD/YYYY</option></select></label>
+      <div id="statusBox" class="statusbox"></div>
+    </details>
+  </section>
+
+  <div id="warn"></div>
+
+  <section id="dash" hidden>
+    <div class="cards" id="cards"></div>
+    <div id="list" class="list"></div>
+    <div class="btns foot">
+      <button class="btn" id="export">Download follow-up log (CSV)</button>
+      <button class="btn danger" id="clear">Clear reminder history</button>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <details id="setDetails"><summary><h2>Settings &amp; message wording</h2><span id="setHint" class="muted"></span></summary>
+      <div class="setgrid">
+        <label>Your name (shown in messages) <span class="req">required</span><input type="text" id="agent" placeholder="e.g. Geri Loo"></label>
+        <label>Your phone (sign-off, optional)<input type="tel" id="agentPhone" placeholder="e.g. 012-345 6789"></label>
+        <label>Language when the file doesn't say
+          <select id="defLang"><option value="all">All 3 in one message</option><option value="en">English</option><option value="ms">Bahasa Melayu</option><option value="zh">中文</option></select></label>
+      </div>
+      <p class="muted" style="font-size:13px">Placeholders: <code>{name}</code> <code>{policy}</code> <code>{amount}</code> <code>{date}</code> <code>{agent}</code>. Your name and phone are added at the end automatically.</p>
+      <div class="tgrid" id="tgrid"></div>
+      <div class="btns"><button class="btn" id="resetT">Reset wording to default</button></div>
+    </details>
+  </section>
+
+  <section class="panel guide">
+    <details><summary><h2>How to use (2 minutes a day)</h2></summary>
+      <ol>
+        <li>In ePartner, export <b>View All Policies</b> (Excel or CSV) and load it with <b>Choose file</b>.</li>
+        <li>First time only: open <b>Check the columns</b> and make sure each item points to the right column. Tick which payment statuses mean "unsuccessful".</li>
+        <li>Open <b>Send today</b>. For each customer, read the message, change the language if needed, then press <b>Open in WhatsApp</b>. Your WhatsApp opens with the message ready, and you press Send there.</li>
+        <li>Come back and press <b>Confirm sent</b>. That's how the app knows not to remind the same customer twice.</li>
+        <li><b>Needs checking</b> lists rows the app won't message because something is missing or unclear, such as no mobile number, a landline, an unreadable date or a duplicate policy. Fix them in the file and reload.</li>
+        <li>When a customer pays, press <b>Mark paid</b>. If the payment is still unsuccessful 3 days after the Day-7 reminder, the customer moves to <b>Call personally</b>.</li>
+      </ol>
+      <p class="muted">Rules: Day-3 reminder when the payment has been unsuccessful for 3 days, then a Day-7 reminder if it's still unsuccessful after 7 days. Days are counted from the unsuccessful payment date in your file. History is saved in this browser on this computer, so use the same browser each day.</p>
+    </details>
+  </section>
+</main>
+
+<script>
+const S = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const DEF_T = {
+  r1: {
+    en: "Hi {name}, this is {agent}, your insurance advisor.\n\nJust a quick note: the premium payment for your policy {policy}{amount} on {date} was unsuccessful.\n\nCould you please check your card or bank account? If you need help to arrange payment, just reply here and I'll assist you.\n\nThank you!",
+    ms: "Hai {name}, saya {agent}, perunding insurans anda.\n\nUntuk makluman, bayaran premium bagi polisi {policy}{amount} pada {date} tidak berjaya.\n\nMohon semak kad atau akaun bank anda. Jika perlukan bantuan untuk membuat bayaran, balas sahaja mesej ini dan saya akan bantu.\n\nTerima kasih!",
+    zh: "{name} 您好，我是您的保险顾问 {agent}。\n\n温馨提醒：您的保单 {policy}{amount} 于 {date} 的保费扣款未成功。\n\n麻烦您查看一下银行卡或银行账户。如需协助安排付款，直接回复此信息，我会尽快帮您处理。\n\n谢谢！"
+  },
+  r2: {
+    en: "Hi {name}, {agent} here again.\n\nFollowing up on my earlier message: the premium for your policy {policy}{amount} due on {date} is still showing as unsuccessful.\n\nTo keep your protection active, please arrange payment as soon as possible. If your card or bank account has changed, let me know and I'll help you update it.\n\nThank you!",
+    ms: "Hai {name}, saya {agent} sekali lagi.\n\nSusulan mesej saya sebelum ini, bayaran premium bagi polisi {policy}{amount} pada {date} masih belum berjaya.\n\nUntuk memastikan perlindungan anda kekal aktif, sila buat bayaran secepat mungkin. Jika kad atau akaun bank anda telah bertukar, maklumkan kepada saya dan saya akan bantu kemas kini.\n\nTerima kasih!",
+    zh: "{name} 您好，我是 {agent}。\n\n跟进之前的信息：您的保单 {policy}{amount} 于 {date} 的保费至今仍未扣款成功。\n\n为确保您的保障持续有效，请尽快安排付款。如您已更换银行卡或账户，告诉我一声，我帮您更新资料。\n\n谢谢！"
+  }
+};
+const LANGS = {en:'English', ms:'Bahasa Melayu', zh:'中文'};
+
+let settings = Object.assign({agent:'', agentPhone:'', defLang:'all', dateFmt:'dmy', templates: JSON.parse(JSON.stringify(DEF_T))}, S.get('pia-settings', {}));
+let log = S.get('pia-log', {});
+const saveSettings = () => S.set('pia-settings', settings);
+const saveLog = () => S.set('pia-log', log);
+
+const FIELDS = [
+  {key:'name', label:'Customer name', req:true, rx:[/customer name|client name|insured name|owner name|holder name|payor name|nama/i, /name|姓名|insured|owner|holder|customer|client/i]},
+  {key:'policy', label:'Policy number', req:true, rx:[/policy ?(no|number|num|#)|no\.? ?polisi|保单号/i, /policy|polisi|保单|contract/i]},
+  {key:'phone', label:'Mobile number', req:true, rx:[/mobile|handphone|h\/p|hp ?no|手机/i, /phone|tel|contact|电话/i]},
+  {key:'status', label:'Payment status', req:true, rx:[/payment status|billing status|collection status|deduction status/i, /status|result|状态/i]},
+  {key:'failDate', label:'Unsuccessful payment date (or premium due date)', req:true, rx:[/unsuccess|fail|reject|bounce|declin|return/i, /^(?!.*next).*(overdue|due)/i, /^(?!.*next).*(date|tarikh|日期)/i]},
+  {key:'nextDue', label:'Next premium due date (for "Upcoming")', req:false, rx:[/next.*due|next premium|paid.?to|ptd/i]},
+  {key:'amount', label:'Premium amount', req:false, rx:[/^(?!.*date).*(premium|保费)/i, /amount|amt|jumlah/i]},
+  {key:'language', label:'Preferred language', req:false, rx:[/lang|bahasa|语言/i]}
+];
+const UNSUCC_RX = /unsuccess|fail|reject|bounce|declin|overdue|outstanding|insufficient|return|unpaid|gagal|tidak berjaya|lapse|不成功|失败|未成功/i;
+
+let st = {headers:[], rows:[], map:{}, statusVals:[], statusSel:new Set(), recs:[], view:'send', fileName:''};
+let drafts = {};
+let opened = new Set();
+
+// ---------- dates ----------
+const MON = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function mk(y, m, d){ if(y < 100) y += 2000; const t = new Date(y, m-1, d); return (t.getFullYear()===y && t.getMonth()===m-1 && t.getDate()===d) ? t : null; }
+function parseDate(v){
+  if(v == null || v === '') return null;
+  if(v instanceof Date){ if(isNaN(v)) return null; const t = new Date(v.getTime() + 12*3600e3); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+  if(typeof v === 'number'){ if(v > 20000 && v < 80000){ const t = new Date(Math.round((v-25569)*864e5)); return new Date(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()); } return null; }
+  const s = String(v).trim(); let m;
+  if((m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))) return mk(+m[1], +m[2], +m[3]);
+  if((m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})\b/))) return settings.dateFmt === 'mdy' ? mk(+m[3], +m[1], +m[2]) : mk(+m[3], +m[2], +m[1]);
+  if((m = s.match(/^(\d{1,2})[\s-]+([a-z]{3,})[\s,-]+(\d{2,4})/i))){ const mo = MON[m[2].slice(0,3).toLowerCase()]; return mo ? mk(+m[3], mo, +m[1]) : null; }
+  if(/^\d{5}$/.test(s)) return parseDate(+s);
+  return null;
+}
+const ymd = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const fromYmd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const fmt = d => { if(typeof d === 'string') d = fromYmd(d); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); };
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const dayDiff = (a, b) => Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5);
+const today = () => { const v = $('#today').value; return v ? fromYmd(v) : new Date(new Date().setHours(0,0,0,0)); };
+
+// ---------- cleaning ----------
+function normPhone(raw){
+  const s = String(raw == null ? '' : raw).trim();
+  if(!s) return {err:'Mobile number is missing'};
+  const parts = s.split(/[\/,;|&]| or /i).map(p => p.trim()).filter(Boolean);
+  let err = null;
+  for(const p of parts){
+    let d = p.replace(/\D/g, '');
+    if(d.startsWith('00')) d = d.slice(2);
+    if(d.startsWith('0')) d = '6' + d;
+    else if(d.startsWith('1') && (d.length === 9 || d.length === 10)) d = '60' + d;
+    if(/^601\d{8,9}$/.test(d)) return {phone:d, note: parts.length > 1 ? `Several numbers in the file, using ${p}` : ''};
+    if(!err) err = /^60[3-9]\d{7,8}$/.test(d) ? `"${p}" looks like a landline, not a mobile number` : `"${p}" is not a valid Malaysian mobile number`;
+  }
+  return {err};
+}
+function cleanName(v){
+  let s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  if(s && !/[a-z]/.test(s) && /[A-Z]/.test(s)) s = s.split(' ').map(w => /^[A-Z]\/[A-Z]$/.test(w) ? w : w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+  return s;
+}
+function fmtAmt(v){
+  const s = String(v == null ? '' : v).trim(); if(!s) return '';
+  const n = Number(s.replace(/rm|myr|,|\s/gi, ''));
+  return isFinite(n) && n > 0 ? 'RM ' + n.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2}) : s;
+}
+function detectLang(v){
+  const s = String(v == null ? '' : v).trim(); if(!s) return '';
+  if(/chin|mandarin|^zh|^cn|中文|华|chinese/i.test(s)) return 'zh';
+  if(/malay|melayu|^bm$|bahasa|^ms$|^my$/i.test(s)) return 'ms';
+  if(/^en|english|英文/i.test(s)) return 'en';
+  return '';
+}
+
+// ---------- file reading ----------
+function parseCSV(t){
+  t = t.replace(/^﻿/, '');
+  const first = t.split(/\r?\n/)[0] || '';
+  const delim = [',', ';', '\t'].sort((a, b) => first.split(b).length - first.split(a).length)[0];
+  const rows = []; let row = [], f = '', q = false;
+  for(let i = 0; i < t.length; i++){
+    const c = t[i];
+    if(q){ if(c === '"'){ if(t[i+1] === '"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if(c === '"') q = true;
+    else if(c === delim){ row.push(f); f = ''; }
+    else if(c === '\n' || c === '\r'){ if(c === '\r' && t[i+1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if(f !== '' || row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+async function onFile(file){
+  const n = file.name.toLowerCase();
+  try{
+    if(n.endsWith('.csv') || n.endsWith('.txt')) return loadTable(parseCSV(await file.text()), file.name);
+    if(!window.XLSX){ alert('The Excel reader needs an internet connection to load. Please connect, or save the file as CSV and try again.'); return; }
+    const wb = XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:true});
+    let best = null;
+    for(const sn of wb.SheetNames){ const a = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, raw:true, defval:''}); if(!best || a.length > best.length) best = a; }
+    loadTable(best || [], file.name);
+  }catch(e){ alert('Sorry, this file could not be read: ' + e.message); }
+}
+function loadTable(aoa, fileName){
+  aoa = aoa.filter(r => r.some(c => String(c).trim() !== ''));
+  if(!aoa.length){ alert('The file looks empty.'); return; }
+  let hi = 0, best = 0;
+  for(let i = 0; i < Math.min(15, aoa.length); i++){
+    const sc = aoa[i].filter(c => { const s = String(c).trim(); return s && FIELDS.some(f => f.rx.some(r => r.test(s))); }).length;
+    if(sc > best){ best = sc; hi = i; }
+  }
+  st.headers = aoa[hi].map(c => String(c).trim());
+  st.rows = aoa.slice(hi + 1).map((cells, i) => ({cells, n: hi + i + 2}));
+  st.fileName = fileName;
+  autoMap(); detectStatuses(); drafts = {}; opened = new Set();
+  $('#fileInfo').textContent = `${fileName} · ${st.rows.length} rows`;
+  $('#mapPanel').hidden = false;
+  const missing = FIELDS.filter(f => f.req && st.map[f.key] < 0);
+  $('#mapDetails').open = missing.length > 0 || !S.get('pia-mapped', false);
+  renderMapping(); process();
+}
+function autoMap(){
+  const used = new Set(); st.map = {};
+  for(const f of FIELDS){
+    st.map[f.key] = -1;
+    outer: for(const r of f.rx) for(let i = 0; i < st.headers.length; i++)
+      if(!used.has(i) && st.headers[i] && r.test(st.headers[i])){ st.map[f.key] = i; used.add(i); break outer; }
+  }
+}
+function detectStatuses(){
+  const c = {}; const i = st.map.status;
+  if(i >= 0) st.rows.forEach(r => { const v = String(r.cells[i] == null ? '' : r.cells[i]).trim(); if(v) c[v] = (c[v] || 0) + 1; });
+  st.statusVals = Object.entries(c).sort((a, b) => b[1] - a[1]);
+  st.statusSel = new Set(st.statusVals.filter(([v]) => UNSUCC_RX.test(v)).map(([v]) => v));
+}
+
+// ---------- mapping UI ----------
+function renderMapping(){
+  const opts = st.headers.map((h, i) => `<option value="${i}">${esc(h || '(column ' + (i+1) + ')')}</option>`).join('');
+  $('#mapGrid').innerHTML = FIELDS.map(f => `<label>${esc(f.label)}${f.req ? ' <span class="req">*</span>' : ''}
+    <select data-map="${f.key}"><option value="-1">— not in file —</option>${opts}</select></label>`).join('');
+  FIELDS.forEach(f => { $(`[data-map="${f.key}"]`).value = st.map[f.key]; });
+  const ok = FIELDS.filter(f => st.map[f.key] >= 0).length;
+  $('#mapSummary').textContent = `${ok} of ${FIELDS.length} columns matched`;
+  $('#statusBox').innerHTML = st.map.status < 0 ? '<span class="muted">Choose the Payment status column above.</span>' :
+    `<b>Which statuses mean "payment unsuccessful"?</b> <span class="muted">(ticked ones get reminders)</span>
+     <div class="chips">${st.statusVals.map(([v, n]) => `<label class="chip"><input type="checkbox" data-st="${esc(v)}" ${st.statusSel.has(v) ? 'checked' : ''}>${esc(v)} <span class="muted">(${n})</span></label>`).join('') || '<span class="muted">No status values found.</span>'}</div>`;
+}
+$('#mapGrid').addEventListener('change', e => {
+  const k = e.target.dataset.map; if(!k) return;
+  st.map[k] = +e.target.value; if(k === 'status') detectStatuses();
+  S.set('pia-mapped', true); renderMapping(); process();
+});
+$('#statusBox').addEventListener('change', e => {
+  const v = e.target.dataset.st; if(v == null) return;
+  e.target.checked ? st.statusSel.add(v) : st.statusSel.delete(v); S.set('pia-mapped', true); process();
+});
+$('#dateFmt').addEventListener('change', e => { settings.dateFmt = e.target.value; saveSettings(); process(); });
+
+// ---------- core logic ----------
+function process(){
+  const T = today(), m = st.map;
+  const get = (row, k) => m[k] >= 0 ? row.cells[m[k]] : '';
+  const missing = FIELDS.filter(f => f.req && m[f.key] < 0);
+  $('#warn').innerHTML = missing.length ? `<div class="warn">Please choose the column for: <b>${missing.map(f => esc(f.label)).join(', ')}</b>. Until then no reminders are prepared, to avoid guessing.</div>` : '';
+  const recs = [];
+  for(const row of st.rows){
+    const status = String(get(row, 'status') == null ? '' : get(row, 'status')).trim();
+    const r = {row: row.n, name: cleanName(get(row, 'name')), policy: String(get(row, 'policy') == null ? '' : get(row, 'policy')).trim(),
+      status, unsucc: !!status && st.statusSel.has(status), issues: [], notes: []};
+    if(!r.name && !r.policy && !status) continue;
+    r.phoneRaw = String(get(row, 'phone') == null ? '' : get(row, 'phone')).trim();
+    const ph = normPhone(r.phoneRaw); r.phone = ph.phone || ''; r.phoneErr = ph.err; if(ph.note) r.notes.push(ph.note);
+    r.amount = fmtAmt(get(row, 'amount'));
+    r.failRaw = String(get(row, 'failDate') == null ? '' : get(row, 'failDate')).trim();
+    r.fail = parseDate(get(row, 'failDate'));
+    r.next = parseDate(get(row, 'nextDue'));
+    r.langFile = detectLang(get(row, 'language'));
+    recs.push(r);
+  }
+  const counts = {};
+  recs.filter(r => r.unsucc && r.policy).forEach(r => counts[r.policy] = (counts[r.policy] || 0) + 1);
+  for(const r of recs){
+    if(missing.length){ r.stage = 'none'; continue; }
+    if(!r.status){ r.issues.push('No payment status in the file'); r.stage = 'check'; continue; }
+    if(!r.unsucc){
+      const dd = r.next ? dayDiff(T, r.next) : -1;
+      r.stage = dd >= 0 && dd <= 14 ? 'up' : 'none'; r.dueIn = dd; continue;
+    }
+    if(!r.name) r.issues.push('Customer name is missing');
+    if(!r.policy) r.issues.push('Policy number is missing');
+    if(r.phoneErr) r.issues.push(r.phoneErr);
+    if(!r.fail) r.issues.push(r.failRaw ? `Can't read the date "${r.failRaw}"` : 'Unsuccessful payment date is missing');
+    else if(r.fail > T) r.issues.push(`Unsuccessful date ${fmt(r.fail)} is in the future`);
+    if(r.policy && counts[r.policy] > 1) r.issues.push(`Policy appears ${counts[r.policy]} times in the file, so please keep one row`);
+    if(r.issues.length){ r.stage = 'check'; continue; }
+    r.key = r.policy + '|' + ymd(r.fail);
+    const L = log[r.key] || {}; r.L = L;
+    r.day = dayDiff(r.fail, T);
+    if(L.paid) r.stage = 'done';
+    else if(r.day < 3){ r.stage = 'watch'; r.wait = `Day-3 reminder due on ${fmt(addDays(r.fail, 3))}`; }
+    else if(r.day < 7){
+      if(!L.r1) r.stage = 'r1';
+      else { r.stage = 'watch'; r.wait = `Day-3 reminder sent ${fmt(L.r1)} · Day-7 reminder due on ${fmt(addDays(r.fail, 7))}`; }
+    } else {
+      if(!L.r2){ r.stage = 'r2'; if(!L.r1) r.notes.push('The Day-3 reminder was never sent, so this Day-7 reminder covers it.'); }
+      else if(dayDiff(fromYmd(L.r2), T) < 3){ r.stage = 'watch'; r.wait = `Day-7 reminder sent ${fmt(L.r2)} · call personally on ${fmt(addDays(fromYmd(L.r2), 3))} if still unsuccessful`; }
+      else r.stage = 'call';
+    }
+  }
+  st.recs = recs;
+  $('#dash').hidden = false;
+  render();
+}
+
+const VIEWS = [
+  {id:'send', label:'Send today', st:['r1','r2'], hot:true},
+  {id:'call', label:'Call personally', st:['call'], hot:true},
+  {id:'watch', label:'Watching', st:['watch']},
+  {id:'check', label:'Needs checking', st:['check'], hot:true},
+  {id:'up', label:'Upcoming payments (14 days)', st:['up']},
+  {id:'done', label:'Paid / done', st:['done']}
+];
+function render(){
+  const by = v => st.recs.filter(r => v.st.includes(r.stage));
+  $('#cards').innerHTML = VIEWS.map(v => { const n = by(v).length;
+    return `<button class="card ${st.view === v.id ? 'on' : ''} ${v.hot && n ? 'hot' : ''}" data-view="${v.id}"><div class="n">${n}</div><div class="l">${v.label}</div></button>`; }).join('');
+  const v = VIEWS.find(x => x.id === st.view);
+  let items = by(v);
+  if(v.id === 'send') items.sort((a, b) => b.day - a.day);
+  if(v.id === 'up') items.sort((a, b) => a.dueIn - b.dueIn);
+  $('#setHint').textContent = settings.agent ? '' : '⚠ Add your name before sending';
+  if(!items.length){
+    const msg = {send:'Nothing to send today. 🎉', call:'No one needs a call right now.', watch:'No customers waiting for their reminder date.',
+      check:'No problem rows. Every row is clean.', up: st.map.nextDue < 0 ? 'To see upcoming payments, choose the "Next premium due date" column in step 2.' : 'No payments due in the next 14 days.', done:'Nothing marked as paid yet.'}[v.id];
+    $('#list').innerHTML = `<div class="empty">${msg}</div>`; return;
+  }
+  $('#list').innerHTML = items.map(r => card(r, st.recs.indexOf(r))).join('');
+}
+function langOf(r){ return (r.L && r.L.lang) || r.langFile || settings.defLang; }
+function buildMsg(r, stage){
+  const lang = langOf(r);
+  const parts = (lang === 'all' ? ['en','ms','zh'] : [lang]).map(l => {
+    const amt = r.amount ? (l === 'zh' ? `（${r.amount}）` : ` (${r.amount})`) : '';
+    return settings.templates[stage][l].replace(/\{name\}/g, r.name).replace(/\{policy\}/g, r.policy).replace(/\{amount\}/g, amt)
+      .replace(/\{date\}/g, fmt(r.fail)).replace(/\{agent\}/g, settings.agent || '[your name]');
+  });
+  const sign = (settings.agent || '[your name]') + (settings.agentPhone ? '\n' + settings.agentPhone : '');
+  return parts.join('\n\n— — —\n\n') + '\n\n' + sign;
+}
+function card(r, i){
+  const head = (badge, cls) => `<div class="rec-top"><div><div class="nm">${esc(r.name || '(no name)')}</div>
+    <div class="meta">Policy ${esc(r.policy || '—')}${r.amount ? ' · ' + esc(r.amount) : ''}${r.phone ? ' · +' + esc(r.phone) : ''}${r.stage === 'check' ? ' · file row ' + r.row : ''}</div></div>
+    <span class="badge ${cls}">${badge}</span></div>`;
+  const notes = r.notes.map(n => `<div class="note">ⓘ ${esc(n)}</div>`).join('');
+  if(r.stage === 'r1' || r.stage === 'r2'){
+    const k = r.key + '|' + r.stage;
+    const text = drafts[k] != null ? drafts[k] : buildMsg(r, r.stage);
+    const lang = langOf(r);
+    return `<div class="rec">${head(r.stage === 'r1' ? 'Day-3 reminder' : 'Day-7 reminder', 'b-' + r.stage)}
+      <div class="facts">Payment unsuccessful on <b>${fmt(r.fail)}</b> · <b>Day ${r.day}</b> · status "${esc(r.status)}"</div>${notes}
+      <div class="ctl">Language <select data-act="lang" data-i="${i}">${[['all','All 3'],['en','English'],['ms','Bahasa Melayu'],['zh','中文']].map(([v, l]) => `<option value="${v}" ${v === lang ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <span>You can edit the message below before sending.</span></div>
+      <textarea data-draft="${esc(k)}">${esc(text)}</textarea>
+      <div class="btns">
+        <button class="btn wa" data-act="wa" data-i="${i}" ${settings.agent ? '' : 'disabled title="Add your name in Settings first"'}>Open in WhatsApp</button>
+        <button class="btn ${opened.has(k) ? 'pulse' : ''}" data-act="sent" data-i="${i}">✓ Confirm sent</button>
+        <button class="btn" data-act="copy" data-i="${i}">Copy text</button>
+        <button class="btn" data-act="paid" data-i="${i}">Mark paid</button>
+      </div>${settings.agent ? '' : '<div class="note">Add your name in Settings (bottom of page) before sending.</div>'}</div>`;
+  }
+  if(r.stage === 'call') return `<div class="rec">${head('Call personally', 'b-call')}
+      <div class="facts">Still unsuccessful after both reminders (Day-3: ${r.L.r1 ? fmt(r.L.r1) : 'skipped'}, Day-7: ${fmt(r.L.r2)}). Unsuccessful since ${fmt(r.fail)}, now <b>Day ${r.day}</b>.</div>
+      ${r.L.called ? `<div class="note">You called on ${fmt(r.L.called)}.</div>` : ''}
+      <div class="btns"><a class="btn primary" href="tel:+${esc(r.phone)}">Call +${esc(r.phone)}</a>
+        <a class="btn wa" href="https://wa.me/${esc(r.phone)}" target="_blank" rel="noopener">Open chat</a>
+        <button class="btn" data-act="called" data-i="${i}">Mark called</button>
+        <button class="btn" data-act="paid" data-i="${i}">Mark paid</button></div></div>`;
+  if(r.stage === 'watch') return `<div class="rec">${head('Day ' + r.day, 'b-watch')}
+      <div class="facts">Unsuccessful on ${fmt(r.fail)} · ${esc(r.wait)}</div>${notes}
+      <div class="btns">${r.L.r1 || r.L.r2 ? `<button class="btn" data-act="undo" data-i="${i}">Undo "sent"</button>` : ''}<button class="btn" data-act="paid" data-i="${i}">Mark paid</button></div></div>`;
+  if(r.stage === 'check') return `<div class="rec">${head('Needs checking', 'b-check')}
+      <div class="facts">Status "${esc(r.status || '—')}" · date "${esc(r.failRaw || '—')}" · phone "${esc(r.phoneRaw || r.phone || '—')}"</div>
+      <ul class="issues">${r.issues.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="note">No message is prepared for this customer. Please correct row ${r.row} in your file and load it again.</div></div>`;
+  if(r.stage === 'up') return `<div class="rec">${head(r.dueIn === 0 ? 'Due today' : 'Due in ' + r.dueIn + ' day' + (r.dueIn > 1 ? 's' : ''), 'b-up')}
+      <div class="facts">Next premium due <b>${fmt(r.next)}</b> · status "${esc(r.status)}"</div></div>`;
+  if(r.stage === 'done') return `<div class="rec">${head('Paid', 'b-done')}
+      <div class="facts">Marked paid on ${fmt(r.L.paid)} (unsuccessful on ${fmt(r.fail)})</div>
+      <div class="btns"><button class="btn" data-act="reopen" data-i="${i}">Reopen</button></div></div>`;
+  return '';
+}
+
+// ---------- actions ----------
+const mark = (key, patch) => { log[key] = Object.assign({}, log[key], patch); saveLog(); };
+$('#cards').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if(b){ st.view = b.dataset.view; render(); } });
+$('#list').addEventListener('input', e => { const k = e.target.dataset.draft; if(k) drafts[k] = e.target.value; });
+$('#list').addEventListener('change', e => {
+  if(e.target.dataset.act !== 'lang') return;
+  const r = st.recs[+e.target.dataset.i];
+  mark(r.key, {lang: e.target.value}); delete drafts[r.key + '|r1']; delete drafts[r.key + '|r2']; process();
+});
+$('#list').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]'); if(!b || b.dataset.act === 'lang') return;
+  const r = st.recs[+b.dataset.i], T = ymd(today()), k = r.key + '|' + r.stage;
+  const text = () => drafts[k] != null ? drafts[k] : buildMsg(r, r.stage);
+  switch(b.dataset.act){
+    case 'wa':
+      if(text().includes('[your name]')){ alert('Please add your name in Settings first.'); return; }
+      window.open('https://wa.me/' + r.phone + '?text=' + encodeURIComponent(text()), '_blank', 'noopener');
+      opened.add(k); render(); break;
+    case 'copy':
+      try{ await navigator.clipboard.writeText(text()); b.textContent = 'Copied ✓'; }catch(err){ alert('Copy failed. Please select the text and copy it manually.'); } break;
+    case 'sent':
+      if(!opened.has(k) && !confirm(`Confirm that you sent the ${r.stage === 'r1' ? 'Day-3' : 'Day-7'} reminder to ${r.name}?`)) return;
+      mark(r.key, {[r.stage]: T}); delete drafts[k]; opened.delete(k); process(); break;
+    case 'paid':
+      if(!confirm(`Mark ${r.name} (policy ${r.policy}) as PAID?\nNo more reminders will be prepared for this unsuccessful payment.`)) return;
+      mark(r.key, {paid: T}); process(); break;
+    case 'called': mark(r.key, {called: T}); process(); break;
+    case 'undo':
+      if(!confirm(`Undo the "sent" record for ${r.name}?`)) return;
+      { const L = Object.assign({}, log[r.key]); delete L.r1; delete L.r2; log[r.key] = L; saveLog(); process(); } break;
+    case 'reopen':
+      if(!confirm(`Reopen ${r.name} (policy ${r.policy})? It will come back into the reminder list.`)) return;
+      { const L = Object.assign({}, log[r.key]); delete L.paid; log[r.key] = L; saveLog(); process(); } break;
+  }
+});
+$('#today').addEventListener('change', () => { drafts = {}; if(st.rows.length) process(); });
+$('#file').addEventListener('change', e => { const f = e.target.files[0]; if(f) onFile(f); e.target.value = ''; });
+$('#export').addEventListener('click', () => {
+  const stageName = {r1:'Day-3 reminder due', r2:'Day-7 reminder due', call:'Call personally', watch:'Watching', check:'Needs checking', done:'Paid'};
+  const rows = [['File row','Customer','Policy','Mobile','Status','Unsuccessful date','Day','Stage','Day-3 sent','Day-7 sent','Called','Paid','Issues']];
+  st.recs.filter(r => stageName[r.stage]).forEach(r => { const L = r.L || {};
+    rows.push([r.row, r.name, r.policy, r.phone ? '+' + r.phone : r.phoneRaw, r.status, r.fail ? fmt(r.fail) : r.failRaw, r.day == null ? '' : r.day, stageName[r.stage],
+      L.r1 ? fmt(L.r1) : '', L.r2 ? fmt(L.r2) : '', L.called ? fmt(L.called) : '', L.paid ? fmt(L.paid) : '', r.issues.join('; ')]); });
+  const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = `payment-issues-log-${ymd(today())}.csv`; a.click();
+});
+$('#clear').addEventListener('click', () => {
+  if(!confirm('Delete ALL reminder history (sent / called / paid records) from this computer?\nThis cannot be undone. Consider downloading the log first.')) return;
+  log = {}; saveLog(); process();
+});
+
+// ---------- settings ----------
+function renderSettings(){
+  $('#agent').value = settings.agent; $('#agentPhone').value = settings.agentPhone; $('#defLang').value = settings.defLang; $('#dateFmt').value = settings.dateFmt;
+  $('#tgrid').innerHTML = ['r1','r2'].flatMap(s => Object.keys(LANGS).map(l => `<label>${s === 'r1' ? 'Day-3' : 'Day-7'} reminder · ${LANGS[l]}<textarea data-t="${s}.${l}">${esc(settings.templates[s][l])}</textarea></label>`)).join('');
+}
+['agent','agentPhone','defLang'].forEach(id => $('#' + id).addEventListener('input', e => { settings[id] = e.target.value.trim(); saveSettings(); drafts = {}; if(st.rows.length) process(); }));
+$('#tgrid').addEventListener('input', e => { const [s, l] = (e.target.dataset.t || '').split('.'); if(!l) return; settings.templates[s][l] = e.target.value; saveSettings(); drafts = {}; if(st.rows.length) process(); });
+$('#resetT').addEventListener('click', () => { if(!confirm('Reset all message wording to the default?')) return; settings.templates = JSON.parse(JSON.stringify(DEF_T)); saveSettings(); renderSettings(); drafts = {}; if(st.rows.length) process(); });
+
+// ---------- demo ----------
+$('#demo').addEventListener('click', () => {
+  const T = today(), d = n => fmt(addDays(T, n));
+  const rows = [
+    ['ePartner - View All Policies (DEMO, not real customers)'],
+    [],
+    ['Policy No','Policy Holder Name','Mobile No','Payment Status','Unsuccessful Date','Premium (RM)','Language','Next Due Date'],
+    ['P100234561','TAN AH KOW','012-345 6789','Unsuccessful', d(-1),'250.00','Chinese',''],
+    ['P100234562','Nurul Aisyah binti Ahmad','+6013 222 3333','Unsuccessful', d(-4),'180.50','Malay',''],
+    ['P100234563','Lim Mei Ling','60 19-888 7777','Payment Failed', d(-8),'320.00','',''],
+    ['P100234564','Rajesh Kumar','03-7788 9900','Unsuccessful', d(-5),'410.00','English',''],
+    ['P100234565','Wong Siew Lan','','Unsuccessful', d(-3),'150.00','Chinese',''],
+    ['P100234566','Ahmad Faiz','011-2345 6789','Unsuccessful','31/02/2026','200.00','Malay',''],
+    ['P100234567','Chong Wei Jie','016-777 8888','Paid','','275.00','English', d(5)],
+    ['P100234568','Siti Hajar','017-555 4444','Successful','','199.00','Malay', d(12)],
+    ['P100234569','Lee Kah Hoe','018-246 8100','Unsuccessful', d(-6),'300.00','English',''],
+    ['P100234569','Lee Kah Hoe','018-246 8100','Unsuccessful', d(-6),'300.00','English',''],
+    ['P100234570','MOHD HAFIZ BIN ALI','019-321 4567','Unsuccessful', d(-12),'520.00','English','']
+  ];
+  loadTable(rows, 'demo-data');
+});
+
+$('#today').value = ymd(new Date());
+renderSettings();
+
+// ---------- installable app ----------
+if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('#install').hidden = false; });
+$('#install').addEventListener('click', async () => { if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; $('#install').hidden = true; });
+</script>
+</body>
+</html>
