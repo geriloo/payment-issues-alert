@@ -1,6 +1,7 @@
 // Offline cache so the installed app opens without internet. Bump VERSION on each release.
-const VERSION = 'pia-v1';
+const VERSION = 'pia-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
+  './icons/maskable-192.png', './icons/maskable-512.png', './icons/apple-touch-icon.png',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'];
 
 self.addEventListener('install', e => {

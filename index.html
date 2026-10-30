@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#0e5a4b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Pay Alert">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -88,7 +88,7 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:13px}
 <header class="top"><div class="wrap topin">
   <div><h1>Payment Issues Alert</h1><p>Catch every unsuccessful premium payment. Remind on Day 3 and Day 7, in English, Malay or Chinese.</p></div>
   <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-    <button class="btn" id="install" hidden>⬇ Install app</button>
+    <button class="btn" id="install" hidden>📲 Save to phone</button>
     <label class="today">Today's date (change it to test)<input type="date" id="today"></label>
   </div>
 </div></header>
@@ -153,6 +153,12 @@ code{background:var(--soft);padding:1px 5px;border-radius:5px;font-size:13px}
     </details>
   </section>
 </main>
+
+<dialog id="installDlg" style="max-width:360px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:18px">
+  <h2 style="display:block;margin-bottom:8px">📲 Save to your phone</h2>
+  <div id="installHelp" style="font-size:14px"></div>
+  <form method="dialog" class="btns"><button class="btn primary">OK</button></form>
+</dialog>
 
 <script>
 const S = {
@@ -559,8 +565,18 @@ renderSettings();
 // ---------- installable app ----------
 if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 let installPrompt = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('#install').hidden = false; });
-$('#install').addEventListener('click', async () => { if(!installPrompt) return; installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; $('#install').hidden = true; });
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if(!standalone) $('#install').hidden = false;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; });
+window.addEventListener('appinstalled', () => { $('#install').hidden = true; });
+$('#install').addEventListener('click', async () => {
+  if(installPrompt){ installPrompt.prompt(); const c = await installPrompt.userChoice; installPrompt = null; if(c.outcome === 'accepted') $('#install').hidden = true; return; }
+  $('#installHelp').innerHTML = isIOS
+    ? `<b>iPhone / iPad:</b><ol><li>Open this page in <b>Safari</b>.</li><li>Tap the <b>Share</b> button (square with an arrow ↑).</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>The Pay Alert icon 🔔 appears on your home screen.`
+    : `<b>Android:</b><ol><li>Open this page in <b>Chrome</b>.</li><li>Tap the <b>⋮</b> menu (top right).</li><li>Tap <b>Add to Home screen</b> or <b>Install app</b>, then <b>Install</b>.</li></ol>The Pay Alert icon 🔔 appears on your home screen.`;
+  $('#installDlg').showModal();
+});
 </script>
 </body>
 </html>
